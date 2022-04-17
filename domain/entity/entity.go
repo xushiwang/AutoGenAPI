@@ -141,42 +141,6 @@ func (b *entity) Get(c *gin.Context) {
 		OkWithData(data, c)
 		return
 	}
-	//infrastruter.GetEngine().Asc("id").Find(&appdata)
-	//id := c.Param("id")
-	//fmt.Println(id)
-	//if id == "" { // get all data
-	//	//query := make(map[string]string)
-	//	//limit, offset, sort := 10, 0, ""
-	//	//var err error
-	//	for key, val := range c.Request.URL.Query() {
-	//		fmt.Println(key,val)
-	//		//switch key {
-	//		//case "limit":
-	//		//	limit, err = strconv.Atoi(key)
-	//		//	if err != nil {
-	//		//		FailWithDetailed(http.StatusBadRequest, "LIMIT ERROR", c)
-	//		//	}
-	//		//case "offset":
-	//		//
-	//		//default:
-	//		//	query[key] = c.Query(key)
-	//		//}
-	//
-	//	}
-	//	//b.engine.FetchAll()
-	//	OkWithData("", c)
-	//	//c.AbortWithError(200,errors.New("sdf"))
-	//} else { // get one data
-	//	data, err := b.engine.FetchOne(id)
-	//	if err != nil {
-	//		FailWithMessage(err.Error(), c)
-	//		return
-	//	}
-	//	if data == nil {
-	//		FailWithMessage(NOTFOUNDERROR, c)
-	//	}
-	//	c.JSON(http.StatusOK, response{Code: http.StatusOK, Msg: "FETCHONE"})
-	//}
 }
 
 func Result(code int, data interface{}, msg string, c *gin.Context) {
