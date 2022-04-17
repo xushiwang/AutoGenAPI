@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-xorm/xorm"
@@ -79,11 +80,14 @@ func (x X) FetchAll(pageSize, page int, sort string, opts ...map[string]interfac
 func (x X) FetchOne(id string) (interface{}, error) {
 	objType := reflect.New(reflect.TypeOf(x.model).Elem())
 	data := objType.Interface()
-	_, err := x.x.ID(id).Get(data)
+	has, err := x.x.ID(id).Get(data)
 	if err != nil {
 		return nil, err
 	}
-	return data, nil
+	if has {
+		return data, nil
+	}
+	return nil, errors.New("NOT EXIST")
 }
 func (x X) Delete(id string) error {
 	objType := reflect.New(reflect.TypeOf(x.model).Elem())
