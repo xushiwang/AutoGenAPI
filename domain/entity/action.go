@@ -19,7 +19,7 @@ type StoreEngine interface {
 	Delete(id string) error
 	Update(id string, m interface{}) error
 	FetchOne(id string) (interface{}, error)
-	FetchAll(limit, offset int, sort string, opt ...map[string]string) (interface{}, error)
+	FetchAll(limit, offset int, sort string, opt ...map[string]string) (int64, interface{}, error)
 }
 
 type X struct {
@@ -42,14 +42,26 @@ type Applications struct {
 	Url  string
 }
 
-func (x X) FetchAll(limit, offset int, sort string, opt ...map[string]string) (interface{}, error) {
-	objType := reflect.New(reflect.SliceOf(reflect.TypeOf(x.model)))
-	data := objType.Interface()
-	err := x.x.Limit(limit).Find(data)
+func (x X) FetchAll(pageSize, page int, sort string, opt ...map[string]string) (int64, interface{}, error) {
+	objTypeSlice := reflect.New(reflect.SliceOf(reflect.TypeOf(x.model)))
+	data := objTypeSlice.Interface()
+	offset := pageSize * (page - 1)
+
+	objType := reflect.New(reflect.TypeOf(x.model).Elem())
+	obj := objType.Interface()
+	total, err := x.x.Where("Id > ?", -1).Count(obj)
 	if err != nil {
-		return nil, err
+		return 0, nil, err
 	}
-	return data, nil
+	if sort != "" {
+		err = x.x.Limit(pageSize, offset).OrderBy(sort).Find(data)
+	} else {
+		err = x.x.Limit(pageSize, offset).Find(data)
+	}
+	if err != nil {
+		return 0, nil, err
+	}
+	return total, data, nil
 }
 func (x X) FetchOne(id string) (interface{}, error) {
 	objType := reflect.New(reflect.TypeOf(x.model).Elem())

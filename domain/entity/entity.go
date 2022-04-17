@@ -98,14 +98,42 @@ func (b *entity) Name() string {
 func (b *entity) Get(c *gin.Context) {
 	id := c.Param("id")
 	var data interface{}
-	var err error
-	if id == "" {
-		data, err = b.engine.FetchAll(10, 0, id)
+	m := make(map[string]interface{}, 2)
+	pageSize, page := 10, 1
+	var sort string
+	var total int64
+	_, err := strconv.Atoi(id)
+	if err != nil {
+		for key, _ := range c.Request.URL.Query() {
+			switch key {
+			case "pageSize":
+				ps := c.Request.URL.Query().Get(key)
+				val, err := strconv.Atoi(ps)
+				if err != nil {
+					FailWithMessage(err.Error(), c)
+					return
+				}
+				pageSize = val
+			case "page":
+				pa, err := strconv.Atoi(c.Request.URL.Query().Get(key))
+				if err != nil {
+					FailWithMessage(err.Error(), c)
+					return
+				}
+				page = pa
+			case "sort":
+				sort = c.Request.URL.Query().Get(key)
+
+			default:
+				m[key] = c.Request.URL.Query().Get(key)
+			}
+		}
+		total, data, err = b.engine.FetchAll(pageSize, page, sort)
 		if err != nil {
 			FailWithMessage(err.Error(), c)
 			return
 		}
-		OkWithData(data, c)
+		OkWithData(gin.H{"data": data, "total": total}, c)
 		return
 	} else {
 		data, err = b.engine.FetchOne(id)
