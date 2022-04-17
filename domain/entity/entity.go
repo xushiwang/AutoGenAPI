@@ -2,7 +2,6 @@ package entity
 
 import (
 	"DDD/infrastruter"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"reflect"
@@ -52,7 +51,6 @@ func (b *entity) New(ctx *gin.Context) {
 
 func (b *entity) Del(ctx *gin.Context) {
 	id := ctx.Param("id")
-	fmt.Println(id)
 	if id == "" {
 		FailWithMessage("DELETE METHOD MUST WITH AN ID", ctx)
 		return
@@ -123,12 +121,11 @@ func (b *entity) Get(c *gin.Context) {
 				page = pa
 			case "sort":
 				sort = c.Request.URL.Query().Get(key)
-
 			default:
 				m[key] = c.Request.URL.Query().Get(key)
 			}
 		}
-		total, data, err = b.engine.FetchAll(pageSize, page, sort)
+		total, data, err = b.engine.FetchAll(pageSize, page, sort, m)
 		if err != nil {
 			FailWithMessage(err.Error(), c)
 			return

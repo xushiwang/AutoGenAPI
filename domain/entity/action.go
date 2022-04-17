@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-xorm/xorm"
 	"reflect"
@@ -42,24 +43,36 @@ type Applications struct {
 	Url  string
 }
 
-func (x X) FetchAll(pageSize, page int, sort string, opt ...map[string]string) (int64, interface{}, error) {
+func (x X) FetchAll(pageSize, page int, sort string, opts ...map[string]interface{}) (total int64, data interface{}, err error) {
 	objTypeSlice := reflect.New(reflect.SliceOf(reflect.TypeOf(x.model)))
-	data := objTypeSlice.Interface()
+	data = objTypeSlice.Interface()
 	offset := pageSize * (page - 1)
-
 	objType := reflect.New(reflect.TypeOf(x.model).Elem())
 	obj := objType.Interface()
-	total, err := x.x.Where("Id > ?", -1).Count(obj)
-	if err != nil {
-		return 0, nil, err
-	}
-	if sort != "" {
-		err = x.x.Limit(pageSize, offset).OrderBy(sort).Find(data)
-	} else {
-		err = x.x.Limit(pageSize, offset).Find(data)
-	}
-	if err != nil {
-		return 0, nil, err
+	if len(opts) > 0 && len(opts[0]) == 1 { // query not null
+		for _, opt := range opts {
+			for k, v := range opt {
+				total, err = x.x.Where(fmt.Sprintf("%s=?", k), v).Count(obj)
+				if sort != "" {
+					err = x.x.Where(fmt.Sprintf("%s=?", k), v).Limit(pageSize, offset).OrderBy(sort).Find(data)
+				} else {
+					err = x.x.Where(fmt.Sprintf("%s=?", k), v).Limit(pageSize, offset).Find(data)
+				}
+				if err != nil {
+					return 0, nil, err
+				}
+			}
+		}
+	} else { // query is null
+		total, err = x.x.Where("Id > ?", -1).Count(obj)
+		if sort != "" {
+			err = x.x.Limit(pageSize, offset).OrderBy(sort).Find(data)
+		} else {
+			err = x.x.Limit(pageSize, offset).Find(data)
+		}
+		if err != nil {
+			return 0, nil, err
+		}
 	}
 	return total, data, nil
 }
