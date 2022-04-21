@@ -22,8 +22,7 @@ const (
 
 type entity struct {
 	model      interface{}
-	action     Action
-	engine     store
+	engine     infrastruter.StoreEngine
 	entityName string
 }
 
@@ -33,12 +32,13 @@ type response struct {
 	Msg  string      `json:"msg"`
 }
 
+// NewEntity 创建实体并返回实体地址
 func NewEntity(name string, model interface{}) *entity {
 	if err := infrastruter.GetEngine().Sync2(model); err != nil {
 		panic(any(err))
 	}
 	return &entity{
-		engine:     store{x: infrastruter.GetEngine(), model: model},
+		engine:     infrastruter.StoreEngine{X: infrastruter.GetEngine(), M: model},
 		entityName: name,
 		model:      model,
 	}
