@@ -13,10 +13,17 @@ const (
 	SUCCESS = 0
 )
 
+const (
+	OrderBy  = "orderBy"
+	PageSize = "pageSize"
+	Page     = "page"
+	Sort     = "sort"
+)
+
 type entity struct {
 	model      interface{}
 	action     Action
-	engine     X
+	engine     store
 	entityName string
 }
 
@@ -31,7 +38,7 @@ func NewEntity(name string, model interface{}) *entity {
 		panic(any(err))
 	}
 	return &entity{
-		engine:     X{x: infrastruter.GetEngine(), model: model},
+		engine:     store{x: infrastruter.GetEngine(), model: model},
 		entityName: name,
 		model:      model,
 	}
@@ -98,13 +105,13 @@ func (b *entity) Get(c *gin.Context) {
 	var data interface{}
 	m := make(map[string]interface{}, 2)
 	pageSize, page := 10, 1
-	var sort string
+	orderBy, sort := "", "desc"
 	var total int64
 	_, err := strconv.Atoi(id)
 	if err != nil {
 		for key, _ := range c.Request.URL.Query() {
 			switch key {
-			case "pageSize":
+			case PageSize:
 				ps := c.Request.URL.Query().Get(key)
 				val, err := strconv.Atoi(ps)
 				if err != nil {
@@ -112,20 +119,22 @@ func (b *entity) Get(c *gin.Context) {
 					return
 				}
 				pageSize = val
-			case "page":
+			case Page:
 				pa, err := strconv.Atoi(c.Request.URL.Query().Get(key))
 				if err != nil {
 					FailWithMessage(err.Error(), c)
 					return
 				}
 				page = pa
-			case "sort":
+			case OrderBy:
+				orderBy = c.Request.URL.Query().Get(key)
+			case Sort:
 				sort = c.Request.URL.Query().Get(key)
 			default:
 				m[key] = c.Request.URL.Query().Get(key)
 			}
 		}
-		total, data, err = b.engine.FetchAll(pageSize, page, sort, m)
+		total, data, err = b.engine.FetchAll(pageSize, page, orderBy, sort, m)
 		if err != nil {
 			FailWithMessage(err.Error(), c)
 			return

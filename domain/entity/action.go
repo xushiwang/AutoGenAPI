@@ -16,7 +16,7 @@ type Action interface {
 	Get(ctx *gin.Context)
 }
 
-type StoreEngine interface {
+type storeEngine interface {
 	Save(m interface{}) error
 	Delete(id string) error
 	Update(id string, m interface{}) error
@@ -24,14 +24,14 @@ type StoreEngine interface {
 	FetchAll(limit, offset int, sort string, opt ...map[string]string) (int64, interface{}, error)
 }
 
-type X struct {
+type store struct {
 	model interface{}
-	StoreEngine
+	storeEngine
 	x *xorm.Engine
 }
 
-func (x X) Save(m interface{}) error {
-	_, err := x.x.Insert(m)
+func (s store) Save(m interface{}) error {
+	_, err := s.x.Insert(m)
 	if err != nil {
 		return err
 	}
@@ -44,32 +44,47 @@ type Applications struct {
 	Url  string
 }
 
-func (x X) FetchAll(pageSize, page int, sort string, opts ...map[string]interface{}) (total int64, data interface{}, err error) {
-	objTypeSlice := reflect.New(reflect.SliceOf(reflect.TypeOf(x.model)))
+func (s store) FetchAll(pageSize, page int, orderBy string, sort string, opts map[string]interface{}) (total int64, data interface{}, err error) {
+	objTypeSlice := reflect.New(reflect.SliceOf(reflect.TypeOf(s.model)))
 	data = objTypeSlice.Interface()
 	offset := pageSize * (page - 1)
-	objType := reflect.New(reflect.TypeOf(x.model).Elem())
+	objType := reflect.New(reflect.TypeOf(s.model).Elem())
 	obj := objType.Interface()
-	if len(opts) > 0 && len(opts[0]) == 1 { // query not null
-		for _, opt := range opts {
-			for k, v := range opt {
-				total, err = x.x.Where(fmt.Sprintf("%s=?", k), v).Count(obj)
-				if sort != "" {
-					err = x.x.Where(fmt.Sprintf("%s=?", k), v).Limit(pageSize, offset).OrderBy(sort).Find(data)
-				} else {
-					err = x.x.Where(fmt.Sprintf("%s=?", k), v).Limit(pageSize, offset).Find(data)
-				}
-				if err != nil {
-					return 0, nil, err
-				}
+	if len(opts) > 0 { // query not null
+		// todo check query if right
+		query := ""
+		i := 0
+		for k, v := range opts {
+			if i == 0 {
+				query += fmt.Sprintf("%s='%s'", k, v)
+			} else {
+				query += fmt.Sprintf(" and %s='%s'", k, v)
 			}
+			i++
+		}
+		total, err = s.x.Where(query).Count(obj)
+		if orderBy != "" {
+			if sort == "asc" {
+				err = s.x.Where(query).Asc(orderBy).Limit(pageSize, offset).OrderBy(orderBy).Find(data)
+			} else {
+				err = s.x.Where(query).Desc(orderBy).Limit(pageSize, offset).OrderBy(orderBy).Find(data)
+			}
+		} else {
+			err = s.x.Where(query).Limit(pageSize, offset).Find(data)
+		}
+		if err != nil {
+			return 0, nil, err
 		}
 	} else { // query is null
-		total, err = x.x.Where("Id > ?", -1).Count(obj)
-		if sort != "" {
-			err = x.x.Limit(pageSize, offset).OrderBy(sort).Find(data)
+		total, err = s.x.Where("1 = ?", 1).Count(obj)
+		if orderBy != "" {
+			if sort == "asc" {
+				err = s.x.Limit(pageSize, offset).Asc(orderBy).OrderBy(orderBy).Find(data)
+			} else {
+				err = s.x.Limit(pageSize, offset).Desc(orderBy).OrderBy(orderBy).Find(data)
+			}
 		} else {
-			err = x.x.Limit(pageSize, offset).Find(data)
+			err = s.x.Limit(pageSize, offset).Find(data)
 		}
 		if err != nil {
 			return 0, nil, err
@@ -77,10 +92,10 @@ func (x X) FetchAll(pageSize, page int, sort string, opts ...map[string]interfac
 	}
 	return total, data, nil
 }
-func (x X) FetchOne(id string) (interface{}, error) {
-	objType := reflect.New(reflect.TypeOf(x.model).Elem())
+func (s store) FetchOne(id string) (interface{}, error) {
+	objType := reflect.New(reflect.TypeOf(s.model).Elem())
 	data := objType.Interface()
-	has, err := x.x.ID(id).Get(data)
+	has, err := s.x.ID(id).Get(data)
 	if err != nil {
 		return nil, err
 	}
@@ -89,14 +104,14 @@ func (x X) FetchOne(id string) (interface{}, error) {
 	}
 	return nil, errors.New("NOT EXIST")
 }
-func (x X) Delete(id string) error {
-	objType := reflect.New(reflect.TypeOf(x.model).Elem())
+func (s store) Delete(id string) error {
+	objType := reflect.New(reflect.TypeOf(s.model).Elem())
 	data := objType.Interface()
-	_, err := x.x.ID(id).Delete(data)
+	_, err := s.x.ID(id).Delete(data)
 	return err
 }
 
-func (x X) Update(id string, m interface{}) error {
-	_, err := x.x.Id(id).Update(m)
+func (s store) Update(id string, m interface{}) error {
+	_, err := s.x.Id(id).Update(m)
 	return err
 }
