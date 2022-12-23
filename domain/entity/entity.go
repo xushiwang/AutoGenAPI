@@ -20,6 +20,9 @@ const (
 	Sort     = "sort"
 )
 
+const BeforeCreate = "BeforeCreate"
+const AfterCreate = "AfterCreate"
+
 type entity struct {
 	model      interface{}
 	engine     infrastruter.StoreEngine
@@ -48,11 +51,24 @@ func (b *entity) New(ctx *gin.Context) {
 	m := reflect.New(reflect.TypeOf(b.model).Elem())
 	data := m.Interface()
 	ctx.BindJSON(data)
+
+	// 回调BeforeCreate方法
+	v := reflect.ValueOf(data)
+	if md := v.MethodByName(BeforeCreate); md.IsValid() {
+		md.Call(nil)
+	}
+
 	err := b.engine.Save(data)
 	if err != nil {
 		FailWithMessage(err.Error(), ctx)
 		return
 	}
+
+	// 回调AfterCreate方法
+	if md := v.MethodByName(AfterCreate); md.IsValid() {
+		md.Call(nil)
+	}
+
 	OkWithMessage("INSERT OK", ctx)
 }
 
