@@ -1,8 +1,8 @@
 package entity
 
 import (
-	"DDD/infrastruter"
 	"github.com/gin-gonic/gin"
+	"github.com/xushiwang/AutoGenAPI/infrastruter"
 	"net/http"
 	"reflect"
 	"strconv"

@@ -1,9 +1,9 @@
 package main
 
 import (
-	"DDD/application"
-	"DDD/domain/entity"
-	"DDD/router"
+	"github.com/xushiwang/AutoGenAPI/application"
+	"github.com/xushiwang/AutoGenAPI/domain/entity"
+	"github.com/xushiwang/AutoGenAPI/router"
 )
 
 func main() {

@@ -1,8 +1,8 @@
 package router
 
 import (
-	"DDD/domain/entity"
 	"github.com/gin-gonic/gin"
+	"github.com/xushiwang/AutoGenAPI/domain/entity"
 )
 
 type router struct {

@@ -1,4 +1,4 @@
-module DDD
+module github.com/xushiwang/AutoGenAPI
 
 go 1.18
 
