@@ -15,7 +15,7 @@ var (
 )
 
 func initEngine() *xorm.Engine {
-	engine, err = xorm.NewEngine("sqlite3", "./test.db")
+	engine, err = xorm.NewEngine("sqlite3", "./data.db")
 	if err != nil {
 		panic(any(err))
 	}
